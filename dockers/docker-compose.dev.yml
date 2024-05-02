@@ -1,0 +1,240 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:6.2-alpine
+    hostname: redis
+    container_name: dev-dms-redis
+    restart: always
+    ports:
+      - '36379:6379'
+    networks:
+      - dms-network
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - 'redis_vol:/data'
+
+  postgres_primary:
+    image: docker.io/bitnami/postgresql:16
+    hostname: posgres_primary
+    container_name: dev-dms-postgres-primary
+    restart: always
+    ports:
+      - '35432:5432'
+    volumes:
+      - 'postgres_primary_vol:/bitnami/postgresql'
+    env_file:
+      - ./.env.master.postgres
+    depends_on:
+      - redis
+    networks:
+      - dms-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.3
+    container_name: dev-dms-elasticsearch
+    hostname: elasticsearch
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+    ports:
+      - 39200:9200
+      - 39300:9300
+    networks:
+      - dms-network
+    env_file:
+      - ./.env
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      discovery.type: single-node
+    restart: unless-stopped
+
+  # mongodb:
+  #   image: docker.io/bitnami/mongodb:7.0
+  #   hostname: mongodb
+  #   container_name: dev-dms-mongodb
+  #   restart: always
+  #   ports:
+  #     - "37017:27017"
+  #   volumes:
+  #     - 'mongodb_vol:/bitnami/mongodb'
+  #     - ./mongo.entrypoint-initdb.js:/docker-entrypoint-initdb.d/mongo.entrypoint-initdb.js
+  #   networks:
+  #     - dms-network
+  #   environment:
+  #     - MONGODB_ROOT_PASSWORD=q0lT5i017O8FT94kOhFs
+  #     - MONGODB_ROOT_USER=dgm_admin
+  #     - MONGODB_DATABASE=dms
+
+  # pgbackups:
+  #   image: prodrigestivill/postgres-backup-local
+  #   container_name: pgbackups
+  #   restart: always
+  #   user: postgres:postgres # Optional: see below
+  #   networks:
+  #     - dms-network
+  #   volumes:
+  #     - pgbackups_volume:/backups
+  #   depends_on:
+  #     - postgres_primary
+  #   environment:
+  #     - POSTGRES_HOST=postgres_primary
+  #     - POSTGRES_DB=dms
+  #     - POSTGRES_USER=postgres
+  #     - SCHEDULE=@daily
+  #     - BACKUP_KEEP_DAYS=1
+  #     - BACKUP_KEEP_WEEKS=1
+  #     - BACKUP_KEEP_MONTHS=1
+  #     - HEALTHCHECK_PORT=8082
+
+  # kafka:
+  #   image: bitnami/kafka:latest
+  #   hostname: kafka
+  #   container_name: dev-dms-kafka
+  #   user: "0:0"
+  #   ports:
+  #     - "39095:9095"
+  #   volumes:
+  #     - kafka_vol:/bitnami/kafka
+  #   networks:
+  #     - dms-network
+  #   env_file:
+  #     - ./.env
+  #   environment:
+  #     KAFKA_CFG_NODE_ID: 0
+  #     KAFKA_CFG_PROCESS_ROLES: broker,controller
+  #     KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+  #     KAFKA_CFG_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,BROKER://:9094,EXTERNAL://:9095
+  #     KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,BROKER://kafka:9094,EXTERNAL://${KAFKA_EXTERNAL_HOST}:${KAFKA_EXTERNAL_PORT}
+      
+  #     KAFKA_CLIENT_USERS: ${KAFKA_CLIENT_USERS}
+  #     KAFKA_CLIENT_PASSWORDS: ${KAFKA_CLIENT_PASSWORDS}
+  #     KAFKA_CLIENT_LISTENER_NAME: EXTERNAL
+  #     KAFKA_CFG_SASL_ENABLED_MECHANISMS: PLAIN
+
+  #     KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+  #     KAFKA_INTER_BROKER_USER: ${KAFKA_INTER_BROKER_USER}
+  #     KAFKA_INTER_BROKER_PASSWORD: ${KAFKA_INTER_BROKER_PASSWORD}
+  #     KAFKA_CFG_INTER_BROKER_LISTENER_NAME: BROKER
+
+  #     KAFKA_CFG_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
+  #     KAFKA_CONTROLLER_USER: ${KAFKA_CONTROLLER_USER}
+  #     KAFKA_CONTROLLER_PASSWORD: ${KAFKA_CONTROLLER_PASSWORD}
+  #     KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+
+  #     KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:SASL_PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:SASL_PLAINTEXT,BROKER:SASL_PLAINTEXT
+
+  #   restart: unless-stopped
+
+  webserver:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    hostname: webserver
+    container_name: dev-dms-webserver
+    depends_on:
+      - redis
+      - postgres_primary
+      - elasticsearch
+    networks:
+      - dms-network
+    volumes:
+      - '../logs:/code/logs'
+    env_file:
+      - ../.env
+    restart: always
+
+
+  # filebeat:
+  #   image: docker.elastic.co/beats/filebeat:8.7.0
+  #   container_name: dev-dms-filebeat
+  #   network_mode: "host"
+  #   command:
+  #     - -e
+  #     - --strict.perms=false
+  #   env_file:
+  #     - ../.env
+  #   volumes:
+  #     - ${FILEBEAT_LOG_FOLDER}:/opt/logs
+  #     - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+  #   environment:
+  #     FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD}
+
+  # nginx:
+  #   image: docker.io/bitnami/nginx:1.25
+  #   hostname: nginx
+  #   container_name: dev-dms-nginx
+  #   ports:
+  #     - '30080:8080'
+  #   depends_on:
+  #     - webserver
+  #   networks:
+  #     - dms-network
+  #   volumes:
+  #     - ./nginx/nginx.conf:/opt/bitnami/nginx/conf/nginx.conf:ro
+  #     - ./nginx/server_blocks:/opt/bitnami/nginx/conf/server_blocks
+  #     - nginx_vol:/opt/bitnami/nginx/logs
+  #   restart: always
+
+networks:
+  dms-network:
+    driver: bridge
+
+volumes:
+  postgres_primary_vol:
+    driver: local
+    name: dev_postgres_primary_vol
+    driver_opts:
+      type: none
+      device: /usr/docker/postgres_primary_vol
+      o: bind
+
+  elasticsearch_vol:
+    driver: local
+    name: dev_elasticsearch_vol
+    driver_opts:
+      type: none
+      device: /usr/docker/elasticsearch_vol
+      o: bind
+
+  mongodb_vol:
+    driver: local
+    name: dev_mongodb_vol
+    driver_opts:
+      type: none
+      device: /usr/docker/mongodb_vol
+      o: bind
+
+  redis_vol:
+    driver: local
+    name: dev_redis_vol
+    driver_opts:
+      type: none
+      device: /usr/docker/redis_vol
+      o: bind
+
+  nginx_vol:
+    driver: local
+    name: dev_nginx_vol
+    driver_opts:
+      type: none
+      device: /user/docker/nginx_vol
+      o: bind
+
+  pgbackups_vol:
+    driver: local
+    name: dev_pgbackups_vol
+    driver_opts:
+      type: none
+      device: /user/docker/pgbackups_vol
+      o: bind
+
+  kafka_vol:
+    name: dev_kafka_vol
+    driver: local
+    driver_opts:
+      type: none
+      device: /user/docker/kafka_vol
+      o: bind
