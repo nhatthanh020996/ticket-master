@@ -28,6 +28,12 @@ uvicorn_access = logging.getLogger("uvicorn.access")
 uvicorn_access.disabled = True
 logger = logging.getLogger(__name__)
 
+
+if settings.NEW_RELIC_MONITOR_MODE:
+    import newrelic.agent
+    newrelic.agent.initialize('newrelic.ini')
+
+
 async def user_id_identifier(request: Request):
     auth_header = request.headers.get("Authorization")
     if auth_header is not None:

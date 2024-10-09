@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     ENCRYPT_KEY: str
 
     SENDGRID_API_KEY: str = ''
+    NEW_RELIC_MONITOR_MODE: bool = False
 
 
     class Config:
