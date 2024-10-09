@@ -7,10 +7,17 @@ from ..schemas import Token, LoginRequest, RefreshToken
 from ...users.crud import user_crud
 from ...generics import settings
 from ...generics.utils import security
+from ...users.schemas import UserCreate, UserRead
+from ...users.crud import user_crud
 
 
 auth_v1 = APIRouter(prefix='/auth')
 
+@auth_v1.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserRead)
+async def register(new_user: UserCreate):
+    user = await user_crud.create(user_crud)
+    #TODO: send email for confirming registration
+    return user
 
 @auth_v1.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
 async def login(body: LoginRequest):
