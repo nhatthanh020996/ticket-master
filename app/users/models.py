@@ -14,6 +14,7 @@ class BaseUser(SQLModel):
     email: EmailStr = Field(sa_column=Column(String, unique=True))
     role_id: int = Field(foreign_key='roles.id')
     is_active: bool = Field(default=True)
+    is_verified: bool = Field(default=False, nullable=True)
     phone: str | None = None
     gender: IGenderEnum | None = Field(
         default=IGenderEnum.other,
