@@ -115,7 +115,7 @@ app.add_middleware(
     engine_args={
         "echo": False,
         "pool_pre_ping": True,
-        "pool_size": 8,
+        "pool_size": settings.CONN_POOL_SIZE,
         "max_overflow": 64,
     },
     commit_on_exit=True
