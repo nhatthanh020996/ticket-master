@@ -13,7 +13,6 @@ role_router_v1 = APIRouter(prefix='/roles')
 @user_router_v1.post(
     '',
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(dependences.require_authentication)],
     response_model=UserRead
 )
 async def create_user(new_user: UserCreate):
