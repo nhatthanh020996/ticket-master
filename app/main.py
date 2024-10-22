@@ -9,18 +9,20 @@ from fastapi_pagination import add_pagination
 from fastapi_pagination.utils import disable_installed_extensions_check
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware, db
 from fastapi_limiter import FastAPILimiter
+from sqladmin import Admin
 import redis.asyncio as redis
 
 
 from .generics.middlewares.logging_middlewares import LoggingMiddleware
 from .generics.exceptions import APIException
-from .generics import redis_connection, async_es, settings
+from .generics import redis_connection, async_es, settings, engine
 from .generics.utils.alert_notification import send_discord_message
 
 from .generics.utils.security import decode_token
 from .users.routers import user_router
 from .auth.routers import auth_router
 
+from .users.admin import UserAdmin, RoleAdmin, APIKeyAdmin
 
 uvicorn_error = logging.getLogger("uvicorn.error")
 uvicorn_error.disabled = True
@@ -164,3 +166,8 @@ async def http_exception_handler(request: Request, exc: Exception):
 
 app.include_router(user_router)
 app.include_router(auth_router)
+
+admin = Admin(app, engine)
+admin.add_view(UserAdmin)
+admin.add_view(RoleAdmin)
+admin.add_view(APIKeyAdmin)
