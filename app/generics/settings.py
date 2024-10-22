@@ -45,11 +45,6 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_MAX_CONN_POOL: int = 10
 
-    KAFKA_BOOTSTRAP_SERVER: str
-    KAFKA_SASL: bool = True
-    KAFKA_USERNAME: str = None
-    KAFKA_PASSWORD: str = None
-
     ENABLE_ALERT_NOTIFICATION: bool
     DISCORD_WEBHOOK: str
 
@@ -57,7 +52,6 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int
     ENCRYPT_KEY: str
 
-    SENDGRID_API_KEY: str = ''
     NEW_RELIC_MONITOR_MODE: bool = False
 
 
