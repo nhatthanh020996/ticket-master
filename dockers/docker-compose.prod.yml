@@ -51,23 +51,6 @@ services:
       discovery.type: single-node
     restart: unless-stopped
 
-  #mongodb:
-    #image: docker.io/bitnami/mongodb:7.0
-    #hostname: mongodb
-    #container_name: mongodb
-    #restart: always
-    #ports:
-    #  - "27017:27017"
-    #volumes:
-    #  - 'mongodb_vol:/bitnami/mongodb'
-    #  - ./mongo.entrypoint-initdb.js:/docker-entrypoint-initdb.d/mongo.entrypoint-initdb.js
-    #networks:
-    #  - dms-network
-    #environment:
-    #  - MONGODB_ROOT_PASSWORD=q0lT5i017O8FT94kOhFs
-    #  - MONGODB_ROOT_USER=dgm_admin
-    #  - MONGODB_DATABASE=dms
-
   pgbackups:
     image: prodrigestivill/postgres-backup-local
     container_name: pgbackups

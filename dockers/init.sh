@@ -1,5 +1,5 @@
-mkdir -p /usr/docker/postgres_primary_vol
-mkdir -p /usr/docker/redis_vol
-mkdir -p /usr/docker/elasticsearch_vol
-mkdir -p /usr/docker/nginx_vol
-mkdir -p /usr/docker/pgbackups_vol
+mkdir -p .data/postgres_primary_vol
+mkdir -p .data/redis_vol
+mkdir -p .data/elasticsearch_vol
+mkdir -p .data/nginx_vol
+mkdir -p .data/pgbackups_vol
