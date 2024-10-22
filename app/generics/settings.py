@@ -13,14 +13,7 @@ class Settings(BaseSettings):
     DB_NAME: str
     CONN_POOL_SIZE: Optional[int] = 8
 
-    REP_DB_HOST: str
-    REP_DB_PORT: int
-    REP_DB_USER: str
-    REP_DB_PASSWORD: str
-    REP_DB_PASSWORD_PLAIN: str
-
     DATABASE_URI: PostgresDsn | None = None
-    REP_DATABASE_URI: PostgresDsn | None = None
     
     ENVIRONMENT: str
     LOGGING_LEVEL: str
@@ -38,22 +31,6 @@ class Settings(BaseSettings):
             password=values.get('DB_PASSWORD'),
             host=values.get('DB_HOST'),
             port=values.get('DB_PORT'),
-            path='{0}'.format(values.get('DB_NAME')),
-        )
-    
-    @validator('REP_DATABASE_URI', pre=True)
-    def assemble_rep_db_connection(
-        cls, value: str | None, values: Dict[str, Any],  # noqa: N805, WPS110
-    ) -> str:
-        if isinstance(value, str):
-            return value
-
-        return PostgresDsn.build(
-            scheme='postgresql+asyncpg',
-            username=values.get('REP_DB_USER'),
-            password=values.get('REP_DB_PASSWORD'),
-            host=values.get('REP_DB_HOST'),
-            port=values.get('REP_DB_PORT'),
             path='{0}'.format(values.get('DB_NAME')),
         )
 
