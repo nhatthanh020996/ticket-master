@@ -165,3 +165,5 @@ console/
 test.py
 logs/
 .env
+.data
+.env.master.postgres
