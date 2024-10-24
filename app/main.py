@@ -21,6 +21,7 @@ from .generics.utils.alert_notification import send_discord_message
 from .generics.utils.security import decode_token
 from .users.routers import user_router
 from .auth.routers import auth_router
+from .geocoding.routers import geocoding_router
 
 from .users.admin import UserAdmin, RoleAdmin, APIKeyAdmin
 
@@ -166,6 +167,7 @@ async def http_exception_handler(request: Request, exc: Exception):
 
 app.include_router(user_router)
 app.include_router(auth_router)
+app.include_router(geocoding_router)
 
 admin = Admin(app, engine)
 admin.add_view(UserAdmin)
