@@ -125,6 +125,16 @@ app.add_middleware(
 )
 app.add_middleware(LoggingMiddleware)
 
+if settings.ENVIRONMENT == 'local':
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 @app.exception_handler(APIException)
 async def http_exception_handler(request: Request, exc: APIException):
     request_id = request.state.request_id
