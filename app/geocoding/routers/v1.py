@@ -11,7 +11,7 @@ geocoding_v1 = APIRouter(prefix='/geocoding')
 
 
 @geocoding_v1.get('/search', status_code=status.HTTP_200_OK)
-async def search(query: str, limit: int):
+async def search(query: str, limit: int = 5):
     search_query = {
         "query": {
             "multi_match": {
