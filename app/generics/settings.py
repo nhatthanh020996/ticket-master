@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_MAX_CONN_POOL: int = 10
 
+    GEOCODING_ENGINE: str = 'elastic'
+    GEOCODING_THIRD_PARTY: str = 'nominatim'
+
     ENABLE_ALERT_NOTIFICATION: bool
     DISCORD_WEBHOOK: str
 
