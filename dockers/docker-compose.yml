@@ -7,28 +7,28 @@ services:
     container_name: redis
     restart: always
     ports:
-      - '6379:6379'
+      - '${REDIS_MAPPING_PORT}:6379'
     networks:
-      - dms-network
+      - ticketmaster-network
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - 'redis_vol:/data'
 
-  postgres_primary:
+  postgres:
     image: docker.io/bitnami/postgresql:16
-    hostname: posgres_primary
-    container_name: postgres-primary
+    hostname: postgres
+    container_name: postgres
     restart: always
     ports:
-      - '5432:5432'
+      - '${PG_MAPPING_PORT}:5432'
     volumes:
-      - 'postgres_primary_vol:/bitnami/postgresql'
+      - 'postgres_vol:/bitnami/postgresql'
     env_file:
       - ./.env.master.postgres
     depends_on:
       - redis
     networks:
-      - dms-network
+      - ticketmaster-network
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.3
@@ -36,12 +36,11 @@ services:
     hostname: elasticsearch
     volumes:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
-      - elasticsearch_vol:/usr/share/elasticsearch/data:Z
     ports:
-      - 9200:9200
-      - 9300:9300
+      - ${ES_9200_MAPPING_PORT}:9200
+      - ${ES_9300_MAPPING_PORT}:9300
     networks:
-      - dms-network
+      - ticketmaster-network
     env_file:
       - ./.env
     environment:
@@ -51,41 +50,18 @@ services:
       discovery.type: single-node
     restart: unless-stopped
 
-  pgbackups:
-    image: prodrigestivill/postgres-backup-local
-    container_name: pgbackups
-    restart: always
-    user: postgres:postgres
-    networks:
-      - dms-network
-    volumes:
-      - pgbackups_vol:/backups
-    depends_on:
-      - postgres_primary
-    environment:
-      - POSTGRES_HOST=postgres_primary
-      - POSTGRES_DB=dms
-      - POSTGRES_USER=postgres
-      - SCHEDULE=@daily
-      - BACKUP_KEEP_DAYS=1
-      - BACKUP_KEEP_WEEKS=1
-      - BACKUP_KEEP_MONTHS=1
-      - HEALTHCHECK_PORT=8082
-
   webserver:
     build:
       context: ../
       dockerfile: Dockerfile
     hostname: webserver
     container_name: webserver
-    ports:
-      - "7060:7060"
     depends_on:
       - redis
-      - postgres_primary
+      - postgres
       - elasticsearch
     networks:
-      - dms-network
+      - ticketmaster-network
     volumes:
       - '../logs:/code/logs'
     env_file:
@@ -93,31 +69,31 @@ services:
     restart: always
 
 
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.7.0
-    container_name: filebeat
-    network_mode: "host"
-    command:
-      - -e
-      - --strict.perms=false
-    env_file:
-      - ../.env
-    volumes:
-      - ${FILEBEAT_LOG_FOLDER}:/opt/logs
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
-    environment:
-      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD}
+  # filebeat:
+  #   image: docker.elastic.co/beats/filebeat:8.7.0
+  #   container_name: filebeat
+  #   network_mode: "host"
+  #   command:
+  #     - -e
+  #     - --strict.perms=false
+  #   env_file:
+  #     - ../.env
+  #   volumes:
+  #     - ${FILEBEAT_LOG_FOLDER}:/opt/logs
+  #     - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+  #   environment:
+  #     FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD}
 
   nginx:
     image: docker.io/bitnami/nginx:1.25
     hostname: nginx
-    container_name: nginx
+    container_name: dev-dms-nginx
     ports:
-      - '8080:8080'
+      - '${NGINX_MAPPING_PORT}:8080'
     depends_on:
       - webserver
     networks:
-      - dms-network
+      - ticketmaster-network
     volumes:
       - ./nginx/nginx.conf:/opt/bitnami/nginx/conf/nginx.conf:ro
       - ./nginx/server_blocks:/opt/bitnami/nginx/conf/server_blocks
@@ -125,16 +101,16 @@ services:
     restart: always
 
 networks:
-  dms-network:
+  ticketmaster-network:
     driver: bridge
 
 volumes:
-  postgres_primary_vol:
+  postgres_vol:
     driver: local
-    name: postgres_primary_vol
+    name: postgres_vol
     driver_opts:
       type: none
-      device: /usr/docker/postgres_primary_vol
+      device: .data/postgres_vol
       o: bind
 
   elasticsearch_vol:
@@ -142,15 +118,7 @@ volumes:
     name: elasticsearch_vol
     driver_opts:
       type: none
-      device: /usr/docker/elasticsearch_vol
-      o: bind
-
-  mongodb_vol:
-    driver: local
-    name: mongodb_vol
-    driver_opts:
-      type: none
-      device: /usr/docker/mongodb_vol
+      device: .data/elasticsearch_vol
       o: bind
 
   redis_vol:
@@ -158,7 +126,7 @@ volumes:
     name: redis_vol
     driver_opts:
       type: none
-      device: /usr/docker/redis_vol
+      device: .data/redis_vol
       o: bind
 
   nginx_vol:
@@ -166,7 +134,7 @@ volumes:
     name: nginx_vol
     driver_opts:
       type: none
-      device: /user/docker/nginx_vol
+      device: .data/nginx_vol
       o: bind
 
   pgbackups_vol:
@@ -174,5 +142,5 @@ volumes:
     name: pgbackups_vol
     driver_opts:
       type: none
-      device: /user/docker/pgbackups_vol
+      device: .data/pgbackups_vol
       o: bind
