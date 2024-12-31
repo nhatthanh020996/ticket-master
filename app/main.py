@@ -101,7 +101,7 @@ async def lifespan(app: FastAPI):
     logger.info('Closed redis client successfully!')
 
 app = FastAPI(
-    title="DMS Processor",
+    title="TicketMaster Backend",
     description="Call me more",
     version="0.0.1",
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
